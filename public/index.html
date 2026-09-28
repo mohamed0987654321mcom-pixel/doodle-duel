@@ -45,7 +45,10 @@ button.primary{
   box-shadow:0 6px 20px -6px rgba(139,107,255,.7);
   font-family:var(--font-display);font-weight:700;letter-spacing:.2px;
 }
+button.primary:hover{transform:translateY(-2px);box-shadow:0 12px 28px -8px rgba(139,107,255,.85)}
+button.primary:active{transform:scale(.96)}
 button.alt{background:var(--surface);border:1px solid var(--border)}
+button.alt:hover{transform:translateY(-1px)}
 button.icon-btn{display:inline-flex;align-items:center;gap:7px}
 input{
   font:500 15px/1 var(--font-body);
@@ -68,7 +71,10 @@ input:focus{outline:none;border-color:var(--accent);background:var(--bg-0)}
   animation:rise .5s cubic-bezier(.2,.8,.2,1);
 }
 @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-#logo{width:64px;height:64px;margin:0 auto 4px;filter:drop-shadow(0 6px 16px rgba(139,107,255,.5))}
+@keyframes fadeOut{to{opacity:0;transform:translateY(-8px) scale(.98)}}
+#join.fade-out{animation:fadeOut .2s ease forwards}
+#logo{width:64px;height:64px;margin:0 auto 4px;filter:drop-shadow(0 6px 16px rgba(139,107,255,.5));animation:bob 3.4s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-6px) rotate(-3deg)}}
 #join h1{font-size:34px;font-weight:800;letter-spacing:.3px}
 #tagline{color:var(--ink-dim);font-size:14px;margin-top:-8px;margin-bottom:6px}
 #divider{display:flex;align-items:center;gap:10px;color:var(--ink-faint);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin:2px 0}
@@ -76,7 +82,7 @@ input:focus{outline:none;border-color:var(--accent);background:var(--bg-0)}
 #err{color:var(--bad);min-height:18px;font-size:13px;font-weight:600}
 
 /* ---------- Game shell ---------- */
-#game{display:none;padding:10px;max-width:1200px;margin:0 auto}
+#game{display:none;padding:10px;max-width:1200px;margin:0 auto;animation:rise .45s cubic-bezier(.2,.8,.2,1)}
 #top{
   display:flex;justify-content:space-between;align-items:center;gap:12px;
   padding:12px 18px;background:var(--surface);border:1px solid var(--border);
@@ -88,17 +94,23 @@ input:focus{outline:none;border-color:var(--accent);background:var(--bg-0)}
   font-family:var(--font-display);font-size:26px;letter-spacing:2px;font-weight:700;
   text-align:center;flex:1;white-space:pre;min-width:160px;
 }
-.tile-row{display:inline-flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.tile-row{display:inline-flex;gap:6px;justify-content:center;flex-wrap:wrap;perspective:600px}
 .tile{
   display:inline-flex;align-items:center;justify-content:center;
   min-width:26px;height:34px;border-radius:6px;
   background:var(--surface-2);border-bottom:3px solid var(--accent);
-  font-size:19px;font-weight:700;padding:0 3px;
+  font-size:19px;font-weight:700;padding:0 3px;backface-visibility:hidden;
 }
 .tile.blank{background:transparent;border-bottom:3px solid var(--ink-faint)}
-#timer{font-family:var(--font-display);font-weight:800;font-size:18px;color:var(--accent-3);min-width:44px;text-align:right}
+.tile.reveal{animation:tileFlip .45s cubic-bezier(.2,.8,.2,1)}
+@keyframes tileFlip{0%{transform:rotateX(90deg) scale(.7)}60%{transform:rotateX(-12deg) scale(1.08)}100%{transform:rotateX(0) scale(1)}}
+#timer{font-family:var(--font-display);font-weight:800;font-size:18px;color:var(--accent-3);min-width:44px;text-align:right;transition:color .3s ease}
+#timer.critical{color:var(--bad);animation:pulseText .6s ease-in-out infinite}
+@keyframes pulseText{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
 #timerbar{height:5px;border-radius:99px;background:var(--bg-0);overflow:hidden;margin:-2px 0 10px}
 #timerfill{height:100%;width:0%;border-radius:99px;background:var(--good);transition:width 1s linear, background .3s ease}
+#timerbar.critical{animation:pulseBar .6s ease-in-out infinite}
+@keyframes pulseBar{0%,100%{box-shadow:0 0 0 0 rgba(255,107,129,.6)}50%{box-shadow:0 0 12px 2px rgba(255,107,129,.6)}}
 
 #main{display:grid;grid-template-columns:200px 1fr 270px;gap:10px}
 .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px}
@@ -110,6 +122,7 @@ input:focus{outline:none;border-color:var(--accent);background:var(--bg-0)}
   display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--radius-sm);
   background:var(--surface-2);border:1px solid transparent;
 }
+.pl{transition:background .3s ease, border-color .3s ease, transform .3s ease}
 .pl.ok{border-color:var(--good);background:rgba(74,222,128,.12)}
 .pl.me{border-color:var(--accent)}
 .avatar{
@@ -121,10 +134,16 @@ input:focus{outline:none;border-color:var(--accent);background:var(--bg-0)}
 .pl-name{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:5px}
 .pl-tags{display:flex;gap:4px;margin-top:2px}
 .tag{font-size:9.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;padding:2px 6px;border-radius:99px}
-.tag.drawing{background:rgba(255,138,92,.18);color:var(--accent-2)}
+.tag.drawing{background:rgba(255,138,92,.18);color:var(--accent-2);position:relative;padding-left:15px}
+.tag.drawing::before{content:"";position:absolute;left:6px;top:50%;width:4px;height:4px;border-radius:50%;background:var(--accent-2);transform:translateY(-50%);animation:pulseDot 1.3s ease-in-out infinite}
+@keyframes pulseDot{0%,100%{opacity:1;transform:translateY(-50%) scale(1)}50%{opacity:.35;transform:translateY(-50%) scale(1.8)}}
 .tag.host{background:rgba(255,209,102,.18);color:var(--accent-3)}
 .tag.guessed{background:rgba(74,222,128,.18);color:var(--good)}
-.pl-score{font-family:var(--font-display);font-weight:800;font-size:15px;color:var(--ink)}
+.pl-score{font-family:var(--font-display);font-weight:800;font-size:15px;color:var(--ink);position:relative}
+.pl-score.pop{animation:scorePop .5s ease}
+@keyframes scorePop{0%{transform:scale(1)}35%{transform:scale(1.4);color:var(--good)}100%{transform:scale(1)}}
+.float-plus{position:absolute;right:2px;top:-2px;font-family:var(--font-display);font-weight:800;font-size:12px;color:var(--good);animation:floatUp 1s ease forwards;pointer-events:none;white-space:nowrap}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-24px)}}
 
 /* canvas + overlay */
 #stage{position:relative;border-radius:var(--radius-md);overflow:hidden;box-shadow:0 20px 50px -20px rgba(0,0,0,.6)}
@@ -135,7 +154,14 @@ canvas{width:100%;height:auto;background:var(--canvas);touch-action:none;display
 }
 #overlay h2{font-size:24px;font-weight:700}
 #overlay p{color:var(--ink-dim);font-size:14px}
+#overlay > *{animation:popIn .4s cubic-bezier(.2,.8,.2,1) both}
+#overlay > *:nth-child(2){animation-delay:.05s}
+#overlay > *:nth-child(3){animation-delay:.1s}
+#overlay > *:nth-child(n+4){animation-delay:.12s}
+@keyframes popIn{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
 .big{font-family:var(--font-display);font-size:min(11vw,46px);letter-spacing:4px;color:var(--accent-3);font-weight:800;word-break:break-word}
+#overlay .big{animation:bounceIn .55s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes bounceIn{0%{opacity:0;transform:scale(.5)}60%{opacity:1;transform:scale(1.1)}100%{transform:scale(1)}}
 .opt{font-family:var(--font-display);font-size:17px;padding:15px 22px;font-weight:700}
 .result-row{display:flex;align-items:center;gap:10px;font-size:17px;background:var(--surface-2);padding:8px 18px;border-radius:99px}
 .result-rank{font-family:var(--font-display);font-weight:800;color:var(--accent-3);width:28px}
@@ -154,6 +180,8 @@ canvas{width:100%;height:auto;background:var(--canvas);touch-action:none;display
 #chatp{display:flex;flex-direction:column}
 #chat{display:flex;flex-direction:column;height:100%;min-height:200px}
 #log{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;font-size:13.5px;margin-bottom:10px;max-height:480px;padding-right:2px}
+.sys,.correct,.msg{animation:msgIn .25s ease both}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .sys{color:var(--ink-faint);font-style:italic;font-size:12.5px;padding:2px 4px}
 .correct{color:var(--good);font-weight:700;background:rgba(74,222,128,.1);padding:6px 10px;border-radius:var(--radius-sm)}
 .msg{background:var(--surface-2);padding:7px 11px;border-radius:12px 12px 12px 4px;line-height:1.4}
@@ -169,6 +197,13 @@ canvas{width:100%;height:auto;background:var(--canvas);touch-action:none;display
   #players{flex-direction:row;flex-wrap:wrap}
   .pl{flex:1 1 140px}
   #log{max-height:200px}
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+  }
 }
 </style>
 </head>
@@ -248,6 +283,7 @@ const W = 800, H = 600;
 const DRAW_TIME = 80, PICK_TIME = 15;
 let st = null, options = [], myWord = '', lastWord = '', hint = '';
 let color = '#000000', size = 6, eraser = false, drawing = false, last = null;
+let prevScores = {}, prevHintTokens = [];
 
 const COLORS = ['#000000','#7f8c8d','#e74c3c','#e67e22','#f1c40f','#2ecc71','#1abc9c','#3498db','#6c5ce7','#e84393','#8d5524','#1e3a8a'];
 const AVATAR_COLORS = ['#8b6bff','#ff8a5c','#4ade80','#3498db','#e84393','#f1c40f','#2ecc71','#e74c3c'];
@@ -319,9 +355,12 @@ function go(create) {
   if (!create && !code) { $('err').textContent = 'Enter a room code'; return; }
   socket.emit('join', { name, room: code }, res => {
     if (res.error) { $('err').textContent = res.error; return; }
-    $('join').style.display = 'none';
-    $('game').style.display = 'block';
-    $('roomcode').textContent = res.code;
+    $('join').classList.add('fade-out');
+    setTimeout(() => {
+      $('join').style.display = 'none';
+      $('game').style.display = 'block';
+      $('roomcode').textContent = res.code;
+    }, 180);
   });
 }
 $('createBtn').onclick = () => go(true);
@@ -338,6 +377,8 @@ socket.on('tick', t => {
   const fill = $('timerfill');
   fill.style.width = pct + '%';
   fill.style.background = pct < 25 ? 'var(--bad)' : pct < 50 ? 'var(--accent-3)' : 'var(--good)';
+  $('timerbar').classList.toggle('critical', pct < 25);
+  $('timer').classList.toggle('critical', pct < 25);
   updateHint();
 });
 socket.on('yourWord', w => { myWord = w; updateHint(); });
@@ -357,12 +398,16 @@ socket.on('chat', m => {
 // ---------- Render ----------
 function render() {
   const me = socket.id, isD = st.drawerId === me;
-  if (st.state === 'choosing') { myWord = ''; hint = ''; }
+  if (st.state === 'choosing') { myWord = ''; hint = ''; prevHintTokens = []; }
   $('round').textContent = st.state === 'lobby' ? 'Lobby' : `Round ${Math.min(st.round, st.maxRounds)}/${st.maxRounds}`;
   $('timerbar').style.visibility = st.state === 'drawing' ? 'visible' : 'hidden';
-  if (st.state !== 'drawing') { $('timer').textContent = ''; $('timerfill').style.width = '0%'; }
+  if (st.state !== 'drawing') {
+    $('timer').textContent = ''; $('timerfill').style.width = '0%';
+    $('timerbar').classList.remove('critical'); $('timer').classList.remove('critical');
+  }
 
-  $('players').innerHTML = [...st.players].sort((a, b) => b.score - a.score).map(p => {
+  const sortedPlayers = [...st.players].sort((a, b) => b.score - a.score);
+  $('players').innerHTML = sortedPlayers.map(p => {
     const tags = [];
     if (p.id === st.drawerId && st.state !== 'lobby') tags.push('<span class="tag drawing">Drawing</span>');
     if (p.id === st.hostId) tags.push('<span class="tag host">Host</span>');
@@ -376,6 +421,21 @@ function render() {
       <div class="pl-score">${p.score}</div>
     </div>`;
   }).join('');
+
+  const rows = $('players').querySelectorAll('.pl');
+  sortedPlayers.forEach((p, i) => {
+    const prev = prevScores[p.id];
+    if (prev !== undefined && p.score > prev) {
+      const scoreEl = rows[i].querySelector('.pl-score');
+      scoreEl.classList.add('pop');
+      scoreEl.addEventListener('animationend', () => scoreEl.classList.remove('pop'), { once: true });
+      const badge = document.createElement('span');
+      badge.className = 'float-plus'; badge.textContent = '+' + (p.score - prev);
+      scoreEl.appendChild(badge);
+      badge.addEventListener('animationend', () => badge.remove(), { once: true });
+    }
+  });
+  prevScores = Object.fromEntries(st.players.map(p => [p.id, p.score]));
 
   $('tools').style.display = (isD && st.state === 'drawing') ? 'flex' : 'none';
   $('msg').placeholder = (isD && st.state === 'drawing') ? 'Chat with guessers' : 'Type your guess…';
@@ -391,11 +451,14 @@ function updateHint() {
   if (st.state === 'drawing' && isD) {
     el.innerHTML = ''; el.textContent = 'Draw: ' + myWord.toUpperCase();
   } else if (st.state === 'drawing' && hint) {
-    const tiles = hint.split(' ').map(ch => {
+    const tokens = hint.split(' ');
+    const tiles = tokens.map((ch, i) => {
       if (ch === '  ') return '<span style="width:14px;display:inline-block"></span>';
-      return `<span class="tile ${ch === '_' ? 'blank' : ''}">${ch === '_' ? '' : esc(ch.toUpperCase())}</span>`;
+      const justRevealed = ch !== '_' && prevHintTokens[i] === '_';
+      return `<span class="tile ${ch === '_' ? 'blank' : ''} ${justRevealed ? 'reveal' : ''}">${ch === '_' ? '' : esc(ch.toUpperCase())}</span>`;
     }).join('');
     el.innerHTML = `<span class="tile-row">${tiles}</span>`;
+    prevHintTokens = tokens;
   } else if (st.state === 'reveal') {
     el.textContent = 'The word was ' + lastWord.toUpperCase();
   } else {
