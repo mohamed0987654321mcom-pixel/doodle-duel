@@ -4,55 +4,197 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Doodle Duel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+:root{
+  --bg-0:#100b24; --bg-1:#1a1338; --bg-2:#241a4d;
+  --surface:#231b45; --surface-2:#2c2158; --border:rgba(255,255,255,.08);
+  --ink:#f3f0ff; --ink-dim:#b6acdb; --ink-faint:#8074b0;
+  --accent:#8b6bff; --accent-2:#ff8a5c; --accent-3:#ffd166;
+  --good:#4ade80; --bad:#ff6b81;
+  --canvas:#fdfcf9;
+  --radius-lg:22px; --radius-md:16px; --radius-sm:10px;
+  --font-display:'Baloo 2',system-ui,sans-serif;
+  --font-body:'Inter',-apple-system,system-ui,sans-serif;
+}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,system-ui,sans-serif;background:#1b1633;color:#fff;min-height:100vh}
-button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:10px 16px;background:#7c5cff;color:#fff;font-weight:700}
+body{
+  font-family:var(--font-body);
+  background:
+    radial-gradient(1200px 600px at 15% -10%, #3a2a72 0%, transparent 60%),
+    radial-gradient(900px 500px at 110% 10%, #2a3f72 0%, transparent 55%),
+    linear-gradient(180deg,var(--bg-0),var(--bg-1) 40%,var(--bg-2));
+  background-attachment:fixed;
+  color:var(--ink);
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{font-family:var(--font-display)}
+button{
+  font:600 15px/1 var(--font-body);
+  cursor:pointer;border:0;border-radius:999px;padding:13px 20px;
+  background:var(--surface-2);color:var(--ink);
+  transition:transform .12s ease, filter .12s ease, box-shadow .12s ease;
+}
+button:hover{filter:brightness(1.08)}
 button:active{transform:scale(.96)}
-button.alt{background:#2f2760}
-input{font:inherit;padding:12px;border-radius:12px;border:2px solid #3a3266;background:#26204a;color:#fff;width:100%}
-.row{display:flex;gap:8px}
+button.primary{
+  background:linear-gradient(135deg,var(--accent),#6a4cff);
+  box-shadow:0 6px 20px -6px rgba(139,107,255,.7);
+  font-family:var(--font-display);font-weight:700;letter-spacing:.2px;
+}
+button.alt{background:var(--surface);border:1px solid var(--border)}
+button.icon-btn{display:inline-flex;align-items:center;gap:7px}
+input{
+  font:500 15px/1 var(--font-body);
+  padding:13px 15px;border-radius:var(--radius-sm);
+  border:1.5px solid var(--border);background:var(--bg-1);color:var(--ink);width:100%;
+  transition:border-color .15s ease, background .15s ease;
+}
+input::placeholder{color:var(--ink-faint)}
+input:focus{outline:none;border-color:var(--accent);background:var(--bg-0)}
+.row{display:flex;gap:10px}
 .wrap{flex-wrap:wrap;justify-content:center}
-#join{max-width:360px;margin:12vh auto;padding:24px;text-align:center;display:flex;flex-direction:column;gap:12px}
-#join h1{font-size:42px}
-#err{color:#ff8a8a;min-height:20px}
-#game{display:none;padding:8px;max-width:1200px;margin:0 auto}
-#top{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 14px;background:#26204a;border-radius:14px;margin-bottom:8px;font-weight:700}
-#hint{font-size:24px;letter-spacing:2px;font-weight:800;text-align:center;flex:1;white-space:pre}
-#main{display:grid;grid-template-columns:190px 1fr 260px;gap:8px}
-.panel{background:#26204a;border-radius:14px;padding:10px}
-#players{display:flex;flex-direction:column;gap:6px}
-.pl{display:flex;justify-content:space-between;gap:6px;padding:8px 10px;border-radius:10px;background:#31295c;font-size:14px}
-.pl.ok{background:#1f6b46}
-#stage{position:relative}
-canvas{width:100%;height:auto;background:#fff;border-radius:14px;touch-action:none;display:block}
-#overlay{position:absolute;inset:0;background:rgba(27,22,51,.93);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:16px}
-.big{font-size:44px;letter-spacing:6px;color:#ffd166}
-.opt{font-size:18px;padding:14px 20px}
-#tools{display:none;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center;justify-content:center}
-.sw{width:30px;height:30px;border-radius:50%;border:3px solid #ffffff33;padding:0}
-.sw.sel{border-color:#fff}
+
+/* ---------- Join screen ---------- */
+#join{
+  max-width:380px;margin:8vh auto 0;padding:36px 30px;text-align:center;
+  display:flex;flex-direction:column;gap:14px;
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015));
+  border:1px solid var(--border);border-radius:var(--radius-lg);
+  box-shadow:0 24px 60px -20px rgba(0,0,0,.6);
+  animation:rise .5s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+#logo{width:64px;height:64px;margin:0 auto 4px;filter:drop-shadow(0 6px 16px rgba(139,107,255,.5))}
+#join h1{font-size:34px;font-weight:800;letter-spacing:.3px}
+#tagline{color:var(--ink-dim);font-size:14px;margin-top:-8px;margin-bottom:6px}
+#divider{display:flex;align-items:center;gap:10px;color:var(--ink-faint);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin:2px 0}
+#divider::before,#divider::after{content:"";flex:1;height:1px;background:var(--border)}
+#err{color:var(--bad);min-height:18px;font-size:13px;font-weight:600}
+
+/* ---------- Game shell ---------- */
+#game{display:none;padding:10px;max-width:1200px;margin:0 auto}
+#top{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+  padding:12px 18px;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-md);margin-bottom:10px;flex-wrap:wrap;
+}
+.top-chip{font-family:var(--font-display);font-weight:700;font-size:14px;color:var(--ink-dim);white-space:nowrap}
+.top-chip b{color:var(--ink);font-size:16px}
+#hint{
+  font-family:var(--font-display);font-size:26px;letter-spacing:2px;font-weight:700;
+  text-align:center;flex:1;white-space:pre;min-width:160px;
+}
+.tile-row{display:inline-flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.tile{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:26px;height:34px;border-radius:6px;
+  background:var(--surface-2);border-bottom:3px solid var(--accent);
+  font-size:19px;font-weight:700;padding:0 3px;
+}
+.tile.blank{background:transparent;border-bottom:3px solid var(--ink-faint)}
+#timer{font-family:var(--font-display);font-weight:800;font-size:18px;color:var(--accent-3);min-width:44px;text-align:right}
+#timerbar{height:5px;border-radius:99px;background:var(--bg-0);overflow:hidden;margin:-2px 0 10px}
+#timerfill{height:100%;width:0%;border-radius:99px;background:var(--good);transition:width 1s linear, background .3s ease}
+
+#main{display:grid;grid-template-columns:200px 1fr 270px;gap:10px}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px}
+.panel-title{font-family:var(--font-display);font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint);font-weight:700;padding:2px 4px 10px}
+
+/* players */
+#players{display:flex;flex-direction:column;gap:8px}
+.pl{
+  display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--radius-sm);
+  background:var(--surface-2);border:1px solid transparent;
+}
+.pl.ok{border-color:var(--good);background:rgba(74,222,128,.12)}
+.pl.me{border-color:var(--accent)}
+.avatar{
+  width:32px;height:32px;border-radius:50%;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-weight:700;font-size:13px;color:#fff;
+}
+.pl-info{flex:1;min-width:0}
+.pl-name{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:5px}
+.pl-tags{display:flex;gap:4px;margin-top:2px}
+.tag{font-size:9.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;padding:2px 6px;border-radius:99px}
+.tag.drawing{background:rgba(255,138,92,.18);color:var(--accent-2)}
+.tag.host{background:rgba(255,209,102,.18);color:var(--accent-3)}
+.tag.guessed{background:rgba(74,222,128,.18);color:var(--good)}
+.pl-score{font-family:var(--font-display);font-weight:800;font-size:15px;color:var(--ink)}
+
+/* canvas + overlay */
+#stage{position:relative;border-radius:var(--radius-md);overflow:hidden;box-shadow:0 20px 50px -20px rgba(0,0,0,.6)}
+canvas{width:100%;height:auto;background:var(--canvas);touch-action:none;display:block}
+#overlay{
+  position:absolute;inset:0;background:rgba(16,11,36,.94);backdrop-filter:blur(2px);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:20px;
+}
+#overlay h2{font-size:24px;font-weight:700}
+#overlay p{color:var(--ink-dim);font-size:14px}
+.big{font-family:var(--font-display);font-size:min(11vw,46px);letter-spacing:4px;color:var(--accent-3);font-weight:800;word-break:break-word}
+.opt{font-family:var(--font-display);font-size:17px;padding:15px 22px;font-weight:700}
+.result-row{display:flex;align-items:center;gap:10px;font-size:17px;background:var(--surface-2);padding:8px 18px;border-radius:99px}
+.result-rank{font-family:var(--font-display);font-weight:800;color:var(--accent-3);width:28px}
+
+/* tools */
+#tools{display:none;flex-direction:column;gap:10px;margin-top:10px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md)}
+.tool-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.sw{width:28px;height:28px;border-radius:50%;border:3px solid transparent;padding:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.15)}
+.sw.sel{border-color:#fff;transform:scale(1.12)}
+.size-btn{width:40px;height:40px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;background:var(--surface-2)}
+.size-btn.sel{background:var(--accent)}
+.size-dot{background:#fff;border-radius:50%}
+.tool-sep{width:1px;align-self:stretch;background:var(--border);margin:0 2px}
+
+/* chat */
+#chatp{display:flex;flex-direction:column}
 #chat{display:flex;flex-direction:column;height:100%;min-height:200px}
-#log{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px;font-size:14px;margin-bottom:8px;max-height:520px}
-.sys{color:#a99fe0;font-style:italic}
-.correct{color:#6dffb0;font-weight:700}
-#muteBtn{position:fixed;top:14px;right:14px;z-index:20;width:44px;height:44px;padding:0;border-radius:50%;background:#2f2760;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center}
+#log{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;font-size:13.5px;margin-bottom:10px;max-height:480px;padding-right:2px}
+.sys{color:var(--ink-faint);font-style:italic;font-size:12.5px;padding:2px 4px}
+.correct{color:var(--good);font-weight:700;background:rgba(74,222,128,.1);padding:6px 10px;border-radius:var(--radius-sm)}
+.msg{background:var(--surface-2);padding:7px 11px;border-radius:12px 12px 12px 4px;line-height:1.4}
+.msg b{color:var(--accent-3)}
+#form{gap:8px}
+#form input{border-radius:999px}
+#form button{padding:12px 18px}
+
 @media(max-width:900px){
+  #join{margin-top:4vh}
   #main{grid-template-columns:1fr}
   #center{order:1}#sidebar{order:2}#chatp{order:3}
   #players{flex-direction:row;flex-wrap:wrap}
-  #log{max-height:180px}
+  .pl{flex:1 1 140px}
+  #log{max-height:200px}
 }
 </style>
 </head>
 <body>
 
-<button id="muteBtn" title="Toggle music">🔊</button>
+<button id="muteBtn" class="alt" title="Toggle music" style="position:fixed;top:14px;right:14px;z-index:20;width:44px;height:44px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center">
+  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polygon points="4,9 8,9 13,4 13,20 8,15 4,15" fill="currentColor" stroke="none"/>
+    <path id="muteWaves" d="M16.5 8.5a5 5 0 0 1 0 7"/>
+    <path id="muteWaves2" d="M19 6a9 9 0 0 1 0 12"/>
+  </svg>
+</button>
 
 <div id="join">
+  <svg id="logo" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="32" cy="32" r="30" fill="url(#g1)"/>
+    <path d="M20 44 L26 32 L42 16 L48 22 L32 38 L20 44Z" fill="#fff"/>
+    <path d="M42 16 L48 22" stroke="#ffd166" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="21" cy="43" r="3" fill="#ff8a5c"/>
+    <defs><linearGradient id="g1" x1="0" y1="0" x2="64" y2="64"><stop stop-color="#8b6bff"/><stop offset="1" stop-color="#6a4cff"/></linearGradient></defs>
+  </svg>
   <h1>Doodle Duel</h1>
+  <p id="tagline">Draw it. Guess it. Win it.</p>
   <input id="name" placeholder="Your name" maxlength="14" autocomplete="off">
-  <button id="createBtn">Create room</button>
+  <button id="createBtn" class="primary">Create room</button>
+  <div id="divider">or</div>
   <div class="row">
     <input id="code" placeholder="Room code" maxlength="4" style="text-transform:uppercase" autocomplete="off">
     <button id="joinBtn" class="alt">Join</button>
@@ -62,26 +204,34 @@ canvas{width:100%;height:auto;background:#fff;border-radius:14px;touch-action:no
 
 <div id="game">
   <div id="top">
-    <div>Room <span id="roomcode"></span></div>
-    <div id="round"></div>
+    <div class="top-chip">Room <b id="roomcode"></b></div>
+    <div class="top-chip" id="round"></div>
     <div id="hint"></div>
     <div id="timer"></div>
   </div>
+  <div id="timerbar"><div id="timerfill"></div></div>
   <div id="main">
-    <div id="sidebar" class="panel"><div id="players"></div></div>
+    <div id="sidebar" class="panel">
+      <div class="panel-title">Players</div>
+      <div id="players"></div>
+    </div>
     <div id="center">
       <div id="stage">
         <canvas id="cv" width="800" height="600"></canvas>
         <div id="overlay"></div>
       </div>
-      <div id="tools"></div>
+      <div id="tools">
+        <div class="tool-row" id="swatches"></div>
+        <div class="tool-row" id="sizes"></div>
+      </div>
     </div>
     <div id="chatp" class="panel">
+      <div class="panel-title">Guesses &amp; chat</div>
       <div id="chat">
         <div id="log"></div>
         <form id="form" class="row">
           <input id="msg" placeholder="Type your guess…" maxlength="60" autocomplete="off">
-          <button>Send</button>
+          <button class="primary">Send</button>
         </form>
       </div>
     </div>
@@ -95,12 +245,21 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const socket = io();
 const cv = $('cv'), ctx = cv.getContext('2d');
 const W = 800, H = 600;
+const DRAW_TIME = 80, PICK_TIME = 15;
 let st = null, options = [], myWord = '', lastWord = '', hint = '';
 let color = '#000000', size = 6, eraser = false, drawing = false, last = null;
 
 const COLORS = ['#000000','#7f8c8d','#e74c3c','#e67e22','#f1c40f','#2ecc71','#1abc9c','#3498db','#6c5ce7','#e84393','#8d5524','#1e3a8a'];
+const AVATAR_COLORS = ['#8b6bff','#ff8a5c','#4ade80','#3498db','#e84393','#f1c40f','#2ecc71','#e74c3c'];
+function avatarColor(id) {
+  let h = 0; for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+function initials(name) {
+  return (name || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+}
 
-function clearCanvas() { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H); }
+function clearCanvas() { ctx.fillStyle = '#fdfcf9'; ctx.fillRect(0, 0, W, H); }
 clearCanvas();
 
 function seg(s) {
@@ -115,10 +274,10 @@ const MenuMusic = (() => {
     C5:523.25,D5:587.33,E5:659.25,G5:783.99 };
   const melody = ['C5','G4','E4','G4','A4','G4','E4','D4','C5','G4','E4','D4','E4','D4','C4','D4'];
   const bass   = ['C3','C3','G2','G2','A2','A2','G2','G2'];
-  let ctx = null, master = null, playing = false, muted = false, timer = null;
+  let ctx2 = null, master = null, playing = false, muted = false, timer = null;
 
   function tone(freq, time, dur, type, peak) {
-    const o = ctx.createOscillator(), g = ctx.createGain();
+    const o = ctx2.createOscillator(), g = ctx2.createGain();
     o.type = type; o.frequency.value = freq;
     g.gain.setValueAtTime(0.0001, time);
     g.gain.linearRampToValueAtTime(peak, time + 0.02);
@@ -128,27 +287,28 @@ const MenuMusic = (() => {
   }
   function loop() {
     const step = 0.22, bars = melody.length;
-    const t0 = ctx.currentTime + 0.05;
+    const t0 = ctx2.currentTime + 0.05;
     melody.forEach((n, i) => tone(NOTE[n], t0 + i * step, step * 0.85, 'square', 0.05));
     bass.forEach((n, i) => tone(NOTE[n], t0 + i * step * (bars / bass.length), step * (bars / bass.length) * 0.9, 'triangle', 0.07));
     timer = setTimeout(loop, bars * step * 1000 - 40);
   }
   function start() {
     if (muted || playing) return;
-    if (!ctx) { ctx = new (window.AudioContext || window.webkitAudioContext)(); master = ctx.createGain(); master.gain.value = 1; master.connect(ctx.destination); }
-    if (ctx.state === 'suspended') ctx.resume();
+    if (!ctx2) { ctx2 = new (window.AudioContext || window.webkitAudioContext)(); master = ctx2.createGain(); master.gain.value = 1; master.connect(ctx2.destination); }
+    if (ctx2.state === 'suspended') ctx2.resume();
     playing = true;
     loop();
   }
   function stop() { playing = false; clearTimeout(timer); }
-  function toggleMute() {
-    muted = !muted;
-    if (muted) stop(); else start();
-    return muted;
-  }
+  function toggleMute() { muted = !muted; if (muted) stop(); else start(); return muted; }
   return { start, stop, toggleMute, isMuted: () => muted };
 })();
-$('muteBtn').onclick = () => { $('muteBtn').textContent = MenuMusic.toggleMute() ? '🔇' : '🔊'; };
+$('muteBtn').onclick = () => {
+  const muted = MenuMusic.toggleMute();
+  $('muteWaves').style.display = muted ? 'none' : '';
+  $('muteWaves2').style.display = muted ? 'none' : '';
+  $('muteBtn').style.color = muted ? 'var(--ink-faint)' : 'var(--ink)';
+};
 ['pointerdown', 'keydown'].forEach(ev => window.addEventListener(ev, () => MenuMusic.start(), { once: true }));
 
 // ---------- Join ----------
@@ -166,12 +326,18 @@ function go(create) {
 }
 $('createBtn').onclick = () => go(true);
 $('joinBtn').onclick = () => go(false);
+$('name').addEventListener('keydown', e => { if (e.key === 'Enter') go(true); });
+$('code').addEventListener('keydown', e => { if (e.key === 'Enter') go(false); });
 
 // ---------- Socket events ----------
 socket.on('state', s => { st = s; render(); });
 socket.on('tick', t => {
   hint = t.hint;
   $('timer').textContent = t.timeLeft + 's';
+  const pct = Math.max(0, Math.min(100, (t.timeLeft / DRAW_TIME) * 100));
+  const fill = $('timerfill');
+  fill.style.width = pct + '%';
+  fill.style.background = pct < 25 ? 'var(--bad)' : pct < 50 ? 'var(--accent-3)' : 'var(--good)';
   updateHint();
 });
 socket.on('yourWord', w => { myWord = w; updateHint(); });
@@ -182,7 +348,7 @@ socket.on('strokes', arr => arr.forEach(seg));
 socket.on('clear', clearCanvas);
 socket.on('chat', m => {
   const d = document.createElement('div');
-  if (m.kind === 'msg') d.innerHTML = '<b>' + esc(m.name) + ':</b> ' + esc(m.text);
+  if (m.kind === 'msg') { d.className = 'msg'; d.innerHTML = '<b>' + esc(m.name) + ':</b> ' + esc(m.text); }
   else { d.className = m.kind === 'correct' ? 'correct' : 'sys'; d.textContent = m.text; }
   $('log').appendChild(d);
   $('log').scrollTop = $('log').scrollHeight;
@@ -193,10 +359,24 @@ function render() {
   const me = socket.id, isD = st.drawerId === me;
   if (st.state === 'choosing') { myWord = ''; hint = ''; }
   $('round').textContent = st.state === 'lobby' ? 'Lobby' : `Round ${Math.min(st.round, st.maxRounds)}/${st.maxRounds}`;
-  if (st.state !== 'drawing') $('timer').textContent = '';
-  $('players').innerHTML = [...st.players].sort((a, b) => b.score - a.score).map(p =>
-    `<div class="pl ${p.guessed ? 'ok' : ''}"><span>${p.id === st.drawerId && st.state !== 'lobby' ? '(drawing) ' : ''}${p.id === st.hostId ? '(host) ' : ''}${p.guessed ? '(guessed) ' : ''}${esc(p.name)}${p.id === me ? ' (you)' : ''}</span><b>${p.score}</b></div>`
-  ).join('');
+  $('timerbar').style.visibility = st.state === 'drawing' ? 'visible' : 'hidden';
+  if (st.state !== 'drawing') { $('timer').textContent = ''; $('timerfill').style.width = '0%'; }
+
+  $('players').innerHTML = [...st.players].sort((a, b) => b.score - a.score).map(p => {
+    const tags = [];
+    if (p.id === st.drawerId && st.state !== 'lobby') tags.push('<span class="tag drawing">Drawing</span>');
+    if (p.id === st.hostId) tags.push('<span class="tag host">Host</span>');
+    if (p.guessed) tags.push('<span class="tag guessed">Got it</span>');
+    return `<div class="pl ${p.guessed ? 'ok' : ''} ${p.id === me ? 'me' : ''}">
+      <div class="avatar" style="background:${avatarColor(p.id)}">${esc(initials(p.name))}</div>
+      <div class="pl-info">
+        <div class="pl-name">${esc(p.name)}${p.id === me ? ' (you)' : ''}</div>
+        ${tags.length ? `<div class="pl-tags">${tags.join('')}</div>` : ''}
+      </div>
+      <div class="pl-score">${p.score}</div>
+    </div>`;
+  }).join('');
+
   $('tools').style.display = (isD && st.state === 'drawing') ? 'flex' : 'none';
   $('msg').placeholder = (isD && st.state === 'drawing') ? 'Chat with guessers' : 'Type your guess…';
   updateHint();
@@ -207,10 +387,20 @@ function render() {
 function updateHint() {
   if (!st) return;
   const isD = st.drawerId === socket.id;
-  let t = '';
-  if (st.state === 'drawing') t = isD ? 'Draw: ' + myWord.toUpperCase() : hint;
-  else if (st.state === 'reveal') t = 'The word was ' + lastWord.toUpperCase();
-  $('hint').textContent = t;
+  const el = $('hint');
+  if (st.state === 'drawing' && isD) {
+    el.innerHTML = ''; el.textContent = 'Draw: ' + myWord.toUpperCase();
+  } else if (st.state === 'drawing' && hint) {
+    const tiles = hint.split(' ').map(ch => {
+      if (ch === '  ') return '<span style="width:14px;display:inline-block"></span>';
+      return `<span class="tile ${ch === '_' ? 'blank' : ''}">${ch === '_' ? '' : esc(ch.toUpperCase())}</span>`;
+    }).join('');
+    el.innerHTML = `<span class="tile-row">${tiles}</span>`;
+  } else if (st.state === 'reveal') {
+    el.textContent = 'The word was ' + lastWord.toUpperCase();
+  } else {
+    el.textContent = '';
+  }
 }
 
 function drawOverlay() {
@@ -218,19 +408,20 @@ function drawOverlay() {
   const dn = (st.players.find(p => p.id === st.drawerId) || {}).name || '';
   let h = '';
   if (st.state === 'lobby') {
-    h = `<h2>Waiting for players</h2><p>Share this code</p><div class="big">${st.code}</div>` +
-      (host ? (st.players.length >= 2 ? '<button id="startBtn">Start game</button>' : '<p>Need at least 2 players</p>') : '<p>Host will start the game</p>');
+    h = `<h2>Waiting for players</h2><p>Share this code with your friends</p><div class="big">${st.code}</div>` +
+      (host ? (st.players.length >= 2 ? '<button id="startBtn" class="primary">Start game</button>' : '<p>Need at least 2 players</p>') : '<p>The host will start the game</p>');
   } else if (st.state === 'choosing') {
     h = isD
-      ? '<h2>Pick a word</h2><div class="row wrap">' + options.map(w => `<button class="opt" data-w="${esc(w)}">${esc(w)}</button>`).join('') + '</div>'
-      : `<h2>${esc(dn)} is choosing a word…</h2>`;
+      ? '<h2>Pick a word</h2><div class="row wrap">' + options.map(w => `<button class="opt primary" data-w="${esc(w)}">${esc(w)}</button>`).join('') + '</div>'
+      : `<h2>${esc(dn)} is choosing a word&hellip;</h2>`;
   } else if (st.state === 'reveal') {
-    h = `<h2>The word was</h2><div class="big" style="letter-spacing:2px">${esc(lastWord)}</div>`;
+    h = `<h2>The word was</h2><div class="big">${esc(lastWord)}</div>`;
   } else if (st.state === 'end') {
     const sorted = [...st.players].sort((a, b) => b.score - a.score);
     const medals = ['1st', '2nd', '3rd'];
-    h = '<h2>Game over</h2>' + sorted.map((p, i) => `<div style="font-size:20px">${medals[i] || '-'} ${esc(p.name)} — <b>${p.score}</b></div>`).join('') +
-      (host ? '<button id="startBtn">Play again</button>' : '<p>Waiting for host…</p>');
+    h = '<h2>Game over</h2>' + sorted.map((p, i) =>
+      `<div class="result-row"><span class="result-rank">${medals[i] || '–'}</span>${esc(p.name)}<b style="margin-left:auto">${p.score}</b></div>`
+    ).join('') + (host ? '<button id="startBtn" class="primary">Play again</button>' : '<p>Waiting for the host&hellip;</p>');
   } else { o.style.display = 'none'; return; }
   o.innerHTML = h;
   o.style.display = 'flex';
@@ -239,37 +430,44 @@ function drawOverlay() {
 }
 
 // ---------- Tools ----------
-const tools = $('tools');
+const swatches = $('swatches'), sizes = $('sizes');
 COLORS.forEach(c => {
   const b = document.createElement('button');
   b.className = 'sw' + (c === color ? ' sel' : '');
-  b.style.background = c; b.dataset.c = c;
+  b.style.background = c; b.dataset.c = c; b.title = c;
   b.onclick = () => { color = c; eraser = false; refreshTools(); };
-  tools.appendChild(b);
+  swatches.appendChild(b);
 });
-[['S', 3], ['M', 6], ['L', 14]].forEach(([label, s]) => {
+[['S', 4], ['M', 8], ['L', 16]].forEach(([label, s]) => {
   const b = document.createElement('button');
-  b.className = 'alt'; b.textContent = label; b.onclick = () => { size = s; eraser = false; refreshTools(); };
-  tools.appendChild(b);
+  b.className = 'alt size-btn'; b.dataset.s = s;
+  b.innerHTML = `<span class="size-dot" style="width:${s}px;height:${s}px"></span>`;
+  b.title = label + ' brush';
+  b.onclick = () => { size = s; eraser = false; refreshTools(); };
+  sizes.appendChild(b);
 });
+const sep = document.createElement('div'); sep.className = 'tool-sep'; sizes.appendChild(sep);
 const eb = document.createElement('button');
-eb.className = 'alt'; eb.id = 'eraserBtn'; eb.textContent = 'Eraser';
+eb.className = 'alt icon-btn'; eb.id = 'eraserBtn'; eb.textContent = 'Eraser';
 eb.onclick = () => { eraser = !eraser; refreshTools(); };
-tools.appendChild(eb);
+sizes.appendChild(eb);
 const cb = document.createElement('button');
-cb.className = 'alt'; cb.textContent = 'Clear';
+cb.className = 'alt icon-btn'; cb.textContent = 'Clear';
 cb.onclick = () => { clearCanvas(); socket.emit('clear'); };
-tools.appendChild(cb);
+sizes.appendChild(cb);
 function refreshTools() {
-  document.querySelectorAll('.sw').forEach(b => b.classList.toggle('sel', !eraser && b.dataset.c === color));
-  eb.style.outline = eraser ? '3px solid #fff' : 'none';
+  swatches.querySelectorAll('.sw').forEach(b => b.classList.toggle('sel', !eraser && b.dataset.c === color));
+  sizes.querySelectorAll('.size-btn').forEach(b => b.classList.toggle('sel', !eraser && Number(b.dataset.s) === size));
+  eb.classList.toggle('sel', eraser);
+  eb.style.background = eraser ? 'var(--accent)' : '';
 }
+refreshTools();
 
 // ---------- Drawing ----------
 const canDraw = () => st && st.state === 'drawing' && st.drawerId === socket.id;
 const pos = e => { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height }; };
 function stroke(a, b) {
-  const s = { x0: a.x, y0: a.y, x1: b.x, y1: b.y, color: eraser ? '#ffffff' : color, size: eraser ? 26 : size };
+  const s = { x0: a.x, y0: a.y, x1: b.x, y1: b.y, color: eraser ? '#fdfcf9' : color, size: eraser ? 26 : size };
   seg(s); socket.emit('stroke', s);
 }
 cv.addEventListener('pointerdown', e => {
