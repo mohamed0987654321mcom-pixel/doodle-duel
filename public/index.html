@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Doodle Duel</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,system-ui,sans-serif;background:#1b1633;color:#fff;min-height:100vh}
+button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:10px 16px;background:#7c5cff;color:#fff;font-weight:700}
+button:active{transform:scale(.96)}
+button.alt{background:#2f2760}
+input{font:inherit;padding:12px;border-radius:12px;border:2px solid #3a3266;background:#26204a;color:#fff;width:100%}
+.row{display:flex;gap:8px}
+.wrap{flex-wrap:wrap;justify-content:center}
+#join{max-width:360px;margin:12vh auto;padding:24px;text-align:center;display:flex;flex-direction:column;gap:12px}
+#join h1{font-size:42px}
+#err{color:#ff8a8a;min-height:20px}
+#game{display:none;padding:8px;max-width:1200px;margin:0 auto}
+#top{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 14px;background:#26204a;border-radius:14px;margin-bottom:8px;font-weight:700}
+#hint{font-size:24px;letter-spacing:2px;font-weight:800;text-align:center;flex:1;white-space:pre}
+#main{display:grid;grid-template-columns:190px 1fr 260px;gap:8px}
+.panel{background:#26204a;border-radius:14px;padding:10px}
+#players{display:flex;flex-direction:column;gap:6px}
+.pl{display:flex;justify-content:space-between;gap:6px;padding:8px 10px;border-radius:10px;background:#31295c;font-size:14px}
+.pl.ok{background:#1f6b46}
+#stage{position:relative}
+canvas{width:100%;height:auto;background:#fff;border-radius:14px;touch-action:none;display:block}
+#overlay{position:absolute;inset:0;background:rgba(27,22,51,.93);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:16px}
+.big{font-size:44px;letter-spacing:6px;color:#ffd166}
+.opt{font-size:18px;padding:14px 20px}
+#tools{display:none;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center;justify-content:center}
+.sw{width:30px;height:30px;border-radius:50%;border:3px solid #ffffff33;padding:0}
+.sw.sel{border-color:#fff}
+#chat{display:flex;flex-direction:column;height:100%;min-height:200px}
+#log{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px;font-size:14px;margin-bottom:8px;max-height:520px}
+.sys{color:#a99fe0;font-style:italic}
+.correct{color:#6dffb0;font-weight:700}
+@media(max-width:900px){
+  #main{grid-template-columns:1fr}
+  #center{order:1}#sidebar{order:2}#chatp{order:3}
+  #players{flex-direction:row;flex-wrap:wrap}
+  #log{max-height:180px}
+}
+</style>
+</head>
+<body>
+
+<div id="join">
+  <h1>Doodle Duel</h1>
+  <input id="name" placeholder="Your name" maxlength="14" autocomplete="off">
+  <button id="createBtn">Create room</button>
+  <div class="row">
+    <input id="code" placeholder="Room code" maxlength="4" style="text-transform:uppercase" autocomplete="off">
+    <button id="joinBtn" class="alt">Join</button>
+  </div>
+  <div id="err"></div>
+</div>
+
+<div id="game">
+  <div id="top">
+    <div>Room <span id="roomcode"></span></div>
+    <div id="round"></div>
+    <div id="hint"></div>
+    <div id="timer"></div>
+  </div>
+  <div id="main">
+    <div id="sidebar" class="panel"><div id="players"></div></div>
+    <div id="center">
+      <div id="stage">
+        <canvas id="cv" width="800" height="600"></canvas>
+        <div id="overlay"></div>
+      </div>
+      <div id="tools"></div>
+    </div>
+    <div id="chatp" class="panel">
+      <div id="chat">
+        <div id="log"></div>
+        <form id="form" class="row">
+          <input id="msg" placeholder="Type your guess…" maxlength="60" autocomplete="off">
+          <button>Send</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const socket = io();
+const cv = $('cv'), ctx = cv.getContext('2d');
+const W = 800, H = 600;
+let st = null, options = [], myWord = '', lastWord = '', hint = '';
+let color = '#000000', size = 6, eraser = false, drawing = false, last = null;
+
+const COLORS = ['#000000','#7f8c8d','#e74c3c','#e67e22','#f1c40f','#2ecc71','#1abc9c','#3498db','#6c5ce7','#e84393','#8d5524','#1e3a8a'];
+
+function clearCanvas() { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H); }
+clearCanvas();
+
+function seg(s) {
+  ctx.strokeStyle = s.color; ctx.lineWidth = s.size; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(s.x0 * W, s.y0 * H); ctx.lineTo(s.x1 * W, s.y1 * H); ctx.stroke();
+}
+
+// ---------- Join ----------
+function go(create) {
+  const name = $('name').value.trim();
+  const code = create ? '' : $('code').value.trim();
+  if (!name) { $('err').textContent = 'Type your name first'; return; }
+  if (!create && !code) { $('err').textContent = 'Enter a room code'; return; }
+  socket.emit('join', { name, room: code }, res => {
+    if (res.error) { $('err').textContent = res.error; return; }
+    $('join').style.display = 'none';
+    $('game').style.display = 'block';
+    $('roomcode').textContent = res.code;
+  });
+}
+$('createBtn').onclick = () => go(true);
+$('joinBtn').onclick = () => go(false);
+
+// ---------- Socket events ----------
+socket.on('state', s => { st = s; render(); });
+socket.on('tick', t => {
+  hint = t.hint;
+  $('timer').textContent = t.timeLeft + 's';
+  updateHint();
+});
+socket.on('yourWord', w => { myWord = w; updateHint(); });
+socket.on('wordOptions', o => { options = o; if (st) drawOverlay(); });
+socket.on('turnEnd', d => { lastWord = d.word; });
+socket.on('stroke', seg);
+socket.on('strokes', arr => arr.forEach(seg));
+socket.on('clear', clearCanvas);
+socket.on('chat', m => {
+  const d = document.createElement('div');
+  if (m.kind === 'msg') d.innerHTML = '<b>' + esc(m.name) + ':</b> ' + esc(m.text);
+  else { d.className = m.kind === 'correct' ? 'correct' : 'sys'; d.textContent = m.text; }
+  $('log').appendChild(d);
+  $('log').scrollTop = $('log').scrollHeight;
+});
+
+// ---------- Render ----------
+function render() {
+  const me = socket.id, isD = st.drawerId === me;
+  if (st.state === 'choosing') { myWord = ''; hint = ''; }
+  $('round').textContent = st.state === 'lobby' ? 'Lobby' : `Round ${Math.min(st.round, st.maxRounds)}/${st.maxRounds}`;
+  if (st.state !== 'drawing') $('timer').textContent = '';
+  $('players').innerHTML = [...st.players].sort((a, b) => b.score - a.score).map(p =>
+    `<div class="pl ${p.guessed ? 'ok' : ''}"><span>${p.id === st.drawerId && st.state !== 'lobby' ? '(drawing) ' : ''}${p.id === st.hostId ? '(host) ' : ''}${p.guessed ? '(guessed) ' : ''}${esc(p.name)}${p.id === me ? ' (you)' : ''}</span><b>${p.score}</b></div>`
+  ).join('');
+  $('tools').style.display = (isD && st.state === 'drawing') ? 'flex' : 'none';
+  $('msg').placeholder = (isD && st.state === 'drawing') ? 'Chat with guessers' : 'Type your guess…';
+  updateHint();
+  drawOverlay();
+}
+
+function updateHint() {
+  if (!st) return;
+  const isD = st.drawerId === socket.id;
+  let t = '';
+  if (st.state === 'drawing') t = isD ? 'Draw: ' + myWord.toUpperCase() : hint;
+  else if (st.state === 'reveal') t = 'The word was ' + lastWord.toUpperCase();
+  $('hint').textContent = t;
+}
+
+function drawOverlay() {
+  const o = $('overlay'), isD = st.drawerId === socket.id, host = st.hostId === socket.id;
+  const dn = (st.players.find(p => p.id === st.drawerId) || {}).name || '';
+  let h = '';
+  if (st.state === 'lobby') {
+    h = `<h2>Waiting for players</h2><p>Share this code</p><div class="big">${st.code}</div>` +
+      (host ? (st.players.length >= 2 ? '<button id="startBtn">Start game</button>' : '<p>Need at least 2 players</p>') : '<p>Host will start the game</p>');
+  } else if (st.state === 'choosing') {
+    h = isD
+      ? '<h2>Pick a word</h2><div class="row wrap">' + options.map(w => `<button class="opt" data-w="${esc(w)}">${esc(w)}</button>`).join('') + '</div>'
+      : `<h2>${esc(dn)} is choosing a word…</h2>`;
+  } else if (st.state === 'reveal') {
+    h = `<h2>The word was</h2><div class="big" style="letter-spacing:2px">${esc(lastWord)}</div>`;
+  } else if (st.state === 'end') {
+    const sorted = [...st.players].sort((a, b) => b.score - a.score);
+    const medals = ['1st', '2nd', '3rd'];
+    h = '<h2>Game over</h2>' + sorted.map((p, i) => `<div style="font-size:20px">${medals[i] || '-'} ${esc(p.name)} — <b>${p.score}</b></div>`).join('') +
+      (host ? '<button id="startBtn">Play again</button>' : '<p>Waiting for host…</p>');
+  } else { o.style.display = 'none'; return; }
+  o.innerHTML = h;
+  o.style.display = 'flex';
+  const sb = $('startBtn'); if (sb) sb.onclick = () => socket.emit('start');
+  o.querySelectorAll('.opt').forEach(b => b.onclick = () => socket.emit('pickWord', b.dataset.w));
+}
+
+// ---------- Tools ----------
+const tools = $('tools');
+COLORS.forEach(c => {
+  const b = document.createElement('button');
+  b.className = 'sw' + (c === color ? ' sel' : '');
+  b.style.background = c; b.dataset.c = c;
+  b.onclick = () => { color = c; eraser = false; refreshTools(); };
+  tools.appendChild(b);
+});
+[['S', 3], ['M', 6], ['L', 14]].forEach(([label, s]) => {
+  const b = document.createElement('button');
+  b.className = 'alt'; b.textContent = label; b.onclick = () => { size = s; eraser = false; refreshTools(); };
+  tools.appendChild(b);
+});
+const eb = document.createElement('button');
+eb.className = 'alt'; eb.id = 'eraserBtn'; eb.textContent = 'Eraser';
+eb.onclick = () => { eraser = !eraser; refreshTools(); };
+tools.appendChild(eb);
+const cb = document.createElement('button');
+cb.className = 'alt'; cb.textContent = 'Clear';
+cb.onclick = () => { clearCanvas(); socket.emit('clear'); };
+tools.appendChild(cb);
+function refreshTools() {
+  document.querySelectorAll('.sw').forEach(b => b.classList.toggle('sel', !eraser && b.dataset.c === color));
+  eb.style.outline = eraser ? '3px solid #fff' : 'none';
+}
+
+// ---------- Drawing ----------
+const canDraw = () => st && st.state === 'drawing' && st.drawerId === socket.id;
+const pos = e => { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height }; };
+function stroke(a, b) {
+  const s = { x0: a.x, y0: a.y, x1: b.x, y1: b.y, color: eraser ? '#ffffff' : color, size: eraser ? 26 : size };
+  seg(s); socket.emit('stroke', s);
+}
+cv.addEventListener('pointerdown', e => {
+  if (!canDraw()) return;
+  e.preventDefault(); cv.setPointerCapture(e.pointerId);
+  drawing = true; last = pos(e); stroke(last, last);
+});
+cv.addEventListener('pointermove', e => {
+  if (!drawing) return;
+  const p = pos(e); stroke(last, p); last = p;
+});
+['pointerup', 'pointercancel'].forEach(t => cv.addEventListener(t, () => { drawing = false; }));
+
+// ---------- Chat / guess ----------
+$('form').onsubmit = e => {
+  e.preventDefault();
+  const v = $('msg').value.trim();
+  if (v) socket.emit('guess', v);
+  $('msg').value = '';
+};
+</script>
+</body>
+</html>
