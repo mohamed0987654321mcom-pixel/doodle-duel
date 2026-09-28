@@ -36,6 +36,7 @@ canvas{width:100%;height:auto;background:#fff;border-radius:14px;touch-action:no
 #log{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px;font-size:14px;margin-bottom:8px;max-height:520px}
 .sys{color:#a99fe0;font-style:italic}
 .correct{color:#6dffb0;font-weight:700}
+#muteBtn{position:fixed;top:14px;right:14px;z-index:20;width:44px;height:44px;padding:0;border-radius:50%;background:#2f2760;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center}
 @media(max-width:900px){
   #main{grid-template-columns:1fr}
   #center{order:1}#sidebar{order:2}#chatp{order:3}
@@ -45,6 +46,8 @@ canvas{width:100%;height:auto;background:#fff;border-radius:14px;touch-action:no
 </style>
 </head>
 <body>
+
+<button id="muteBtn" title="Toggle music">🔊</button>
 
 <div id="join">
   <h1>Doodle Duel</h1>
@@ -105,6 +108,49 @@ function seg(s) {
   ctx.beginPath(); ctx.moveTo(s.x0 * W, s.y0 * H); ctx.lineTo(s.x1 * W, s.y1 * H); ctx.stroke();
 }
 
+// ---------- Menu music (procedural, no audio files) ----------
+const MenuMusic = (() => {
+  const NOTE = { C3:130.81,G2:98.00,E2:82.41,A2:110.00,
+    C4:261.63,D4:293.66,E4:329.63,G4:392.00,A4:440.00,
+    C5:523.25,D5:587.33,E5:659.25,G5:783.99 };
+  const melody = ['C5','G4','E4','G4','A4','G4','E4','D4','C5','G4','E4','D4','E4','D4','C4','D4'];
+  const bass   = ['C3','C3','G2','G2','A2','A2','G2','G2'];
+  let ctx = null, master = null, playing = false, muted = false, timer = null;
+
+  function tone(freq, time, dur, type, peak) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, time);
+    g.gain.linearRampToValueAtTime(peak, time + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, time + dur);
+    o.connect(g).connect(master);
+    o.start(time); o.stop(time + dur + 0.05);
+  }
+  function loop() {
+    const step = 0.22, bars = melody.length;
+    const t0 = ctx.currentTime + 0.05;
+    melody.forEach((n, i) => tone(NOTE[n], t0 + i * step, step * 0.85, 'square', 0.05));
+    bass.forEach((n, i) => tone(NOTE[n], t0 + i * step * (bars / bass.length), step * (bars / bass.length) * 0.9, 'triangle', 0.07));
+    timer = setTimeout(loop, bars * step * 1000 - 40);
+  }
+  function start() {
+    if (muted || playing) return;
+    if (!ctx) { ctx = new (window.AudioContext || window.webkitAudioContext)(); master = ctx.createGain(); master.gain.value = 1; master.connect(ctx.destination); }
+    if (ctx.state === 'suspended') ctx.resume();
+    playing = true;
+    loop();
+  }
+  function stop() { playing = false; clearTimeout(timer); }
+  function toggleMute() {
+    muted = !muted;
+    if (muted) stop(); else start();
+    return muted;
+  }
+  return { start, stop, toggleMute, isMuted: () => muted };
+})();
+$('muteBtn').onclick = () => { $('muteBtn').textContent = MenuMusic.toggleMute() ? '🔇' : '🔊'; };
+['pointerdown', 'keydown'].forEach(ev => window.addEventListener(ev, () => MenuMusic.start(), { once: true }));
+
 // ---------- Join ----------
 function go(create) {
   const name = $('name').value.trim();
@@ -155,6 +201,7 @@ function render() {
   $('msg').placeholder = (isD && st.state === 'drawing') ? 'Chat with guessers' : 'Type your guess…';
   updateHint();
   drawOverlay();
+  if (st.state === 'lobby' || st.state === 'end') MenuMusic.start(); else MenuMusic.stop();
 }
 
 function updateHint() {
